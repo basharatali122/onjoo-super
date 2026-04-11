@@ -77,7 +77,7 @@ export default function LoginPage() {
             display: 'flex', background: 'var(--bg-raised)',
             borderRadius: 'var(--radius-sm)', padding: 3, marginBottom: 24,
           }}>
-            {['login', 'register'].map(m => (
+            {['login'].map(m => (
               <button key={m} onClick={() => setMode(m)} style={{
                 flex: 1, padding: '7px 0', border: 'none', cursor: 'pointer',
                 borderRadius: 'var(--radius-sm)',
