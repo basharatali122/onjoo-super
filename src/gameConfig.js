@@ -13,7 +13,7 @@ export const GAMES = [
     shortLabel: 'MW',
     color: '#a78bfa',          // purple
     LOGIN_WS_URL:         'wss://game.milkywayapp.xyz:7878/',
-    SUPER_ROULETTE_WS_URL:'wss://game.milkywayapp.xyz:10152/',
+    SUPER_ROULETTE_WS_URL:'wss://game.milkywayapp.xyz:2152/',
     GAME_VERSION:         '2.0.1',
   },
   {
