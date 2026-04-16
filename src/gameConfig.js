@@ -22,7 +22,7 @@ export const GAMES = [
     shortLabel: 'PM',
     color: '#fb923c',          // orange
     LOGIN_WS_URL:         'wss://pandamaster.vip:7878/',
-    SUPER_ROULETTE_WS_URL:'wss://pandamaster.vip:10152/',
+    SUPER_ROULETTE_WS_URL:'wss://game.milkywayapp.xyz:2152/',
     GAME_VERSION:         '2.0.1',
   },
   {
