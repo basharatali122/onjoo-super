@@ -1174,6 +1174,10 @@ export default function ProfilePage() {
   const [repetitions, setRepetitions] = useState(1);
   const [starting, setStarting] = useState(false);
   const [liveStats, setLiveStats] = useState(null);
+  // Admin gate state — shows prefix-based filtering status
+  const [adminGate, setAdminGate] = useState(null); // { total, allowed, blocked, prefixes }
+  const [gateLoading, setGateLoading] = useState(false);
+  const [proxyReady, setProxyReady] = useState(null); // null=loading, true=ok, false=not configured
 
   // Stable event handler — won't re-subscribe on each render
   const handleEvent = useCallback((event, data) => {
@@ -1205,6 +1209,39 @@ export default function ProfilePage() {
     return () => clearInterval(iv);
   }, [profileName]);
 
+  // Fetch admin gate preview on mount and after accounts change
+  const fetchGatePreview = useCallback(async () => {
+    setGateLoading(true);
+    try {
+      const r = await processingAPI.preview(profileName);
+      setAdminGate(r.data);
+    } catch (_) {
+      setAdminGate(null);
+    } finally {
+      setGateLoading(false);
+    }
+  }, [profileName]);
+
+  useEffect(() => { fetchGatePreview(); }, [fetchGatePreview]);
+
+  // Check proxy config on mount and whenever user visits proxy tab
+  const checkProxyReady = useCallback(() => {
+    proxyAPI.get(profileName).then(r => {
+      const cfg = r.data.config || {};
+      const list = Array.isArray(cfg.proxyList)
+        ? cfg.proxyList
+        : (cfg.proxyList || '').split('\n').filter(Boolean);
+      setProxyReady(cfg.enabled === true && list.length > 0);
+    }).catch(() => setProxyReady(false));
+  }, [profileName]);
+
+  useEffect(() => { checkProxyReady(); }, [checkProxyReady]);
+
+  // Re-check proxy whenever user switches away from proxy tab (they may have saved)
+  useEffect(() => {
+    if (tab !== 'proxy') checkProxyReady();
+  }, [tab]);
+
   const handleStart = async () => {
     setStarting(true);
     try {
@@ -1215,16 +1252,39 @@ export default function ProfilePage() {
         SUPER_ROULETTE_WS_URL: game.SUPER_ROULETTE_WS_URL,
         GAME_VERSION:          game.GAME_VERSION,
       };
-      await processingAPI.start(profileName, { repetitions, betAmount, gameConfig });
+      const r = await processingAPI.start(profileName, { repetitions, betAmount, gameConfig });
+      // Update gate display with what was actually allowed
+      if (r.data.adminGate) setAdminGate(prev => ({ ...prev, ...r.data.adminGate }));
       setBotStatus(s => ({ ...s, running: true }));
       setLogs([]);
       setTab('terminal');
     } catch (e) {
+      const errData   = e.response?.data;
+      const errCode   = errData?.code;
+      const msg       = errData?.detail || errData?.error || e.message;
+      const isProxy   = errCode === 'PROXY_REQUIRED' || e.response?.status === 400 && msg?.toLowerCase().includes('proxy');
+      const is403     = e.response?.status === 403;
+
       setLogs(prev => [...prev, {
         type: 'error',
-        message: `Failed to start: ${e.response?.data?.error || e.message}`,
+        message: `❌ ${msg}`,
         timestamp: new Date().toISOString(),
       }]);
+
+      if (isProxy) {
+        // Switch to proxy tab so user can immediately fix it
+        setTab('proxy');
+        setLogs(prev => [...prev, {
+          type: 'warning',
+          message: '👆 Go to the Proxy tab → enable proxy → add your proxy list → then start again.',
+          timestamp: new Date().toISOString(),
+        }]);
+      } else if (is403) {
+        fetchGatePreview();
+        setTab('terminal');
+      } else {
+        setTab('terminal');
+      }
     }
     setStarting(false);
   };
@@ -1305,8 +1365,77 @@ export default function ProfilePage() {
               </span>
             </div>
 
+            {/* Proxy status badge */}
+            {proxyReady !== null && (
+              <div
+                onClick={() => setTab('proxy')}
+                title={proxyReady ? 'Proxy active — click to manage' : 'Proxy not configured — click to fix'}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  background: proxyReady ? 'rgba(0,255,136,0.08)' : 'rgba(255,68,68,0.1)',
+                  border: `1px solid ${proxyReady ? 'rgba(0,255,136,0.25)' : 'rgba(255,68,68,0.3)'}`,
+                  borderRadius: 20, padding: '3px 10px', cursor: 'pointer',
+                }}>
+                <span style={{
+                  width: 6, height: 6, borderRadius: '50%', display: 'inline-block',
+                  background: proxyReady ? 'var(--accent)' : '#ff4444',
+                }} />
+                <span style={{
+                  fontFamily: 'var(--font-mono)', fontSize: 10,
+                  color: proxyReady ? 'var(--accent)' : '#ff4444',
+                }}>
+                  {proxyReady ? 'PROXY ON' : 'NO PROXY'}
+                </span>
+              </div>
+            )}
+
+            {/* Admin Gate badge */}
+            {adminGate && !gateLoading && (
+              <div
+                title={`Prefixes: ${adminGate.prefixes?.join(', ') || 'none'}`}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  background: adminGate.allowed > 0 ? 'rgba(0,255,136,0.08)' : 'rgba(255,68,68,0.1)',
+                  border: `1px solid ${adminGate.allowed > 0 ? 'rgba(0,255,136,0.25)' : 'rgba(255,68,68,0.3)'}`,
+                  borderRadius: 20, padding: '3px 10px', cursor: 'default',
+                }}>
+                <span style={{
+                  width: 6, height: 6, borderRadius: '50%', display: 'inline-block',
+                  background: adminGate.allowed > 0 ? 'var(--accent)' : '#ff4444',
+                }} />
+                <span style={{
+                  fontFamily: 'var(--font-mono)', fontSize: 10,
+                  color: adminGate.allowed > 0 ? 'var(--accent)' : '#ff4444',
+                }}>
+                  {adminGate.allowed}/{adminGate.total} ALLOWED
+                </span>
+                <button
+                  onClick={fetchGatePreview}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 0 2px', display: 'flex', alignItems: 'center' }}
+                  title="Refresh prefix check">
+                  <RefreshCw size={9} style={{ color: 'var(--text-muted)' }} />
+                </button>
+              </div>
+            )}
+            {gateLoading && (
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)' }}>
+                checking gate…
+              </span>
+            )}
+
             {!botStatus.running ? (
-              <button className="btn btn-primary" onClick={handleStart} disabled={starting} style={{ gap: 8 }}>
+              <button
+                className="btn btn-primary"
+                onClick={handleStart}
+                disabled={starting || (adminGate && adminGate.allowed === 0) || proxyReady === false}
+                title={
+                  proxyReady === false
+                    ? 'Proxy not configured — go to Proxy tab to enable and add proxies'
+                    : adminGate && adminGate.allowed === 0
+                    ? 'No accounts allowed by admin — add prefixes in admin panel'
+                    : undefined
+                }
+                style={{ gap: 8 }}>
                 <Play size={13} />
                 {starting ? 'STARTING...' : 'START BOT'}
               </button>
@@ -1330,6 +1459,66 @@ export default function ProfilePage() {
                   width: `${((botStatus.currentCycle || 0) / Math.max(botStatus.totalCycles || repetitions, 1)) * 100}%`
                 }} />
               </div>
+            </div>
+          )}
+
+          {/* Proxy not configured warning */}
+          {proxyReady === false && !botStatus.running && (
+            <div style={{
+              marginTop: 10, padding: '10px 14px',
+              background: 'rgba(255,68,68,0.07)',
+              border: '1px solid rgba(255,68,68,0.3)',
+              borderRadius: 6, fontSize: 11, fontFamily: 'var(--font-mono)',
+              color: '#ff6b6b', display: 'flex', alignItems: 'center', gap: 8,
+              cursor: 'pointer',
+            }} onClick={() => setTab('proxy')}>
+              <span style={{ fontSize: 14 }}>🚫</span>
+              <span>
+                <strong>Proxy required.</strong> Processing is blocked without proxies — all {accounts?.length || ''} accounts would hit the game server from 1 IP and get banned.{' '}
+                <span style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => setTab('proxy')}>
+                  Click here to configure proxy →
+                </span>
+              </span>
+            </div>
+          )}
+
+          {/* Admin Gate detail row — shown when some accounts are blocked */}
+          {adminGate && adminGate.blocked > 0 && !botStatus.running && (
+            <div style={{
+              marginTop: 10, padding: '8px 12px',
+              background: 'rgba(255,170,0,0.07)',
+              border: '1px solid rgba(255,170,0,0.2)',
+              borderRadius: 6, fontSize: 11, fontFamily: 'var(--font-mono)',
+              color: 'var(--text-secondary)',
+              display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
+            }}>
+              <AlertCircle size={12} style={{ color: '#ffaa00', flexShrink: 0 }} />
+              <span>
+                <span style={{ color: '#ffaa00', fontWeight: 700 }}>{adminGate.blocked} accounts blocked</span>
+                {' '}by admin prefix gate.{' '}
+                {adminGate.prefixes?.length > 0
+                  ? <>Allowed prefixes: <strong>{adminGate.prefixes.join(', ')}</strong>.</>
+                  : <strong>No prefixes configured — all accounts blocked.</strong>
+                }
+                {adminGate.blockedSample?.length > 0 && (
+                  <span style={{ color: 'var(--text-muted)' }}>
+                    {' '}e.g. {adminGate.blockedSample.join(', ')}{adminGate.blocked > adminGate.blockedSample.length ? '…' : ''}
+                  </span>
+                )}
+              </span>
+            </div>
+          )}
+
+          {/* Admin Gate — all blocked */}
+          {adminGate && adminGate.allowed === 0 && !botStatus.running && (
+            <div style={{
+              marginTop: 10, padding: '10px 14px',
+              background: 'rgba(255,68,68,0.07)',
+              border: '1px solid rgba(255,68,68,0.25)',
+              borderRadius: 6, fontSize: 11, fontFamily: 'var(--font-mono)',
+              color: '#ff6b6b',
+            }}>
+              ⛔ All {adminGate.total} accounts are blocked by admin prefix gate. Ask your admin to add the correct prefixes.
             </div>
           )}
         </div>
