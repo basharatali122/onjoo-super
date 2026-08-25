@@ -34,16 +34,16 @@ export const GAMES = [
     SUPER_ROULETTE_WS_URL:'ws://34.213.5.211:2635/',
     GAME_VERSION:         '2.0.1',
   },
-  // ── Add FireKirin here when links are available ──────────────────────────
-  // {
-  //   id: 'firekirin',
-  //   label: 'FireKirin',
-  //   shortLabel: 'FK',
-  //   color: '#f87171',
-  //   LOGIN_WS_URL:         'wss://...',
-  //   SUPER_ROULETTE_WS_URL:'wss://...',
-  //   GAME_VERSION:         '2.0.1',
-  // },
+  ── Add FireKirin here when links are available ──────────────────────────
+  {
+    id: 'firekirin',
+    label: 'FireKirin',
+    shortLabel: 'FK',
+    color: '#f87171',
+    LOGIN_WS_URL:         'wss://game.firekirin.xyz:7878/',
+    SUPER_ROULETTE_WS_URL:'wss://game.firekirin.xyz:10635/',
+    GAME_VERSION:         '2.0.1',
+  },
 ];
 
 export const DEFAULT_GAME_ID = 'milkyway';
