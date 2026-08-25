@@ -34,7 +34,7 @@ export const GAMES = [
     SUPER_ROULETTE_WS_URL:'ws://34.213.5.211:2635/',
     GAME_VERSION:         '2.0.1',
   },
-  ── Add FireKirin here when links are available ──────────────────────────
+  
   {
     id: 'firekirin',
     label: 'FireKirin',
