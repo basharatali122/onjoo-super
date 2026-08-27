@@ -7,33 +7,33 @@
  */
 
 export const GAMES = [
-  {
-    id: 'milkyway',
-    label: 'MilkyWay',
-    shortLabel: 'MW',
-    color: '#a78bfa',          // purple
-    LOGIN_WS_URL:         'wss://game.milkywayapp.xyz:7878/',
-    SUPER_ROULETTE_WS_URL:'wss://game.milkywayapp.xyz:10152/',
-    GAME_VERSION:         '2.0.1',
-  },
-  {
-    id: 'pandamaster',
-    label: 'Panda Master',
-    shortLabel: 'PM',
-    color: '#fb923c',          // orange
-    LOGIN_WS_URL:         'wss://pandamaster.vip:7878/',
-    SUPER_ROULETTE_WS_URL:'wss://game.milkywayapp.xyz:2152/',
-    GAME_VERSION:         '2.0.1',
-  },
-  {
-    id: 'orionstars',
-    label: 'OrionStars',
-    shortLabel: 'OS',
-    color: '#38bdf8',          // sky blue
-    LOGIN_WS_URL:         'ws://34.213.5.211:8600/',
-    SUPER_ROULETTE_WS_URL:'ws://34.213.5.211:2635/',
-    GAME_VERSION:         '2.0.1',
-  },
+  // {
+  //   id: 'milkyway',
+  //   label: 'MilkyWay',
+  //   shortLabel: 'MW',
+  //   color: '#a78bfa',          // purple
+  //   LOGIN_WS_URL:         'wss://game.milkywayapp.xyz:7878/',
+  //   SUPER_ROULETTE_WS_URL:'wss://game.milkywayapp.xyz:10152/',
+  //   GAME_VERSION:         '2.0.1',
+  // },
+  // {
+  //   id: 'pandamaster',
+  //   label: 'Panda Master',
+  //   shortLabel: 'PM',
+  //   color: '#fb923c',          // orange
+  //   LOGIN_WS_URL:         'wss://pandamaster.vip:7878/',
+  //   SUPER_ROULETTE_WS_URL:'wss://game.milkywayapp.xyz:2152/',
+  //   GAME_VERSION:         '2.0.1',
+  // },
+  // {
+  //   id: 'orionstars',
+  //   label: 'OrionStars',
+  //   shortLabel: 'OS',
+  //   color: '#38bdf8',          // sky blue
+  //   LOGIN_WS_URL:         'ws://34.213.5.211:8600/',
+  //   SUPER_ROULETTE_WS_URL:'ws://34.213.5.211:2635/',
+  //   GAME_VERSION:         '2.0.1',
+  // },
   
   {
     id: 'firekirin',
